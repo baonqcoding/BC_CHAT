@@ -1,47 +1,53 @@
 import asyncio
 import websockets
 import socket
-import json
+import threading
 
 TCP_HOST = "127.0.0.1"
 TCP_PORT = 9000
 WS_PORT = 8765
 
-#Hàm xử lý 1 client WebSocket
 
 async def handle_ws(websocket):
     print("[WS] Client connected")
 
-    # Kết nối TCP tới server
     tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_sock.connect((TCP_HOST, TCP_PORT))
+    print("[WS] Connected to TCP server")
 
-#Nhận dữ liệu từ WebSocket → gửi TCP
+    loop = asyncio.get_event_loop()
 
+    # WS -> TCP
     async def ws_to_tcp():
         async for message in websocket:
             tcp_sock.send(message.encode("utf-8"))
 
-#Nhận dữ liệu từ TCP → gửi WebSocket
+    # TCP -> WS (RUN IN THREAD)
+    def tcp_to_ws():
+        try:
+            while True:
+                data = tcp_sock.recv(1024)
+                if not data:
+                    break
+                asyncio.run_coroutine_threadsafe(
+                    websocket.send(data.decode("utf-8")),
+                    loop
+                )
+        except:
+            pass
 
-    async def tcp_to_ws():
-        while True:
-            data = tcp_sock.recv(1024)
-            if not data:
-                break
-            await websocket.send(data.decode("utf-8"))
-
-
-#Chạy 2 nhiệm vụ song song
-    await asyncio.gather(ws_to_tcp(), tcp_to_ws())
-
-#Dọn dẹp kết nối
+    threading.Thread(target=tcp_to_ws, daemon=True).start()
+    await ws_to_tcp()
 
     tcp_sock.close()
     print("[WS] Client disconnected")
 
-#Khởi động WebSocket server
+
 async def main():
     async with websockets.serve(handle_ws, "0.0.0.0", WS_PORT):
         print(f"[WS] WebSocket running on port {WS_PORT}")
-        await asyncio.Future()  # Chạy mãi mãi
+        await asyncio.Future()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

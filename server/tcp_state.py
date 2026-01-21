@@ -5,8 +5,7 @@ from utils import encode_message, decode_message
 from client_manager import ClientManager
 from room_manager import RoomManager
 HOST = "0.0.0.0"
-PORT = 9000   # 🔥 PHẢI TRÙNG VỚI gateway
-
+PORT = 9000   
 client_manager = ClientManager()
 room_manager = RoomManager()
 

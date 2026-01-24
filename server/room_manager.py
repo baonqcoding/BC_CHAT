@@ -1,7 +1,7 @@
 from utils import encode_message
 class RoomManager:
     def __init__(self):
-        self.rooms = {}  # room_name -> list of connections
+        self.rooms = {}  
 
     def join(self, room, conn):
         if room not in self.rooms:

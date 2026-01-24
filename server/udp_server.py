@@ -4,7 +4,7 @@ import json
 UDP_HOST = "0.0.0.0"
 UDP_PORT = 9001  
 
-# room_name -> set(address)
+
 rooms = {}
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -22,12 +22,12 @@ while True:
         audio = msg["audio"]
 
 
-        # add client to room
+        
         if room not in rooms:
             rooms[room] = set()
         rooms[room].add(addr)
 
-        # broadcast audio to all clients in the room
+        
         for client_addr in rooms[room]:
             if client_addr != addr:
                 sock.sendto(data, client_addr)

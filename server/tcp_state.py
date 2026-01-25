@@ -37,7 +37,7 @@ def handle_client(conn, addr):
                 msg_type = msg.get("type")
                 data = msg.get("data", {})
 
-                # ===== LOGIN =====
+                
                 if msg_type == "login":
                     user = data.get("username")
                     password = data.get("password")
@@ -54,7 +54,7 @@ def handle_client(conn, addr):
                             "data": {"status": "fail"}
                         }))
 
-                # ===== JOIN ROOM =====
+
                 elif msg_type == "join":
                     room = data.get("room")
                     room_manager.join(room, conn)
@@ -64,7 +64,7 @@ def handle_client(conn, addr):
                         "data": {"room": room}
                     }))
 
-                # ===== CHAT =====
+
                 elif msg_type == "chat":
                     room = data.get("room")
                     message = data.get("message")

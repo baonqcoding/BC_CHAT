@@ -17,12 +17,12 @@ async def handle_ws(websocket):
 
     loop = asyncio.get_event_loop()
 
-    # WS -> TCP
+
     async def ws_to_tcp():
         async for message in websocket:
             tcp_sock.send(message.encode("utf-8"))
 
-    # TCP -> WS (RUN IN THREAD)
+
     def tcp_to_ws():
         try:
             while True:

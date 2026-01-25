@@ -16,11 +16,15 @@ class LobbyWindow(tk.Frame):
     def join_room(self):
         self.client.send({
             "type": "join",
-            "room": self.room.get()
+            "data": {
+                "room": self.room.get()
+            }
         })
 
     def handle_server(self, msg):
-        if msg["type"] == "join":
-            self.destroy()
-            room = RoomWindow(self.master, self.client, msg["room"])
-            room.pack(fill="both", expand=True)
+        if msg.get("type") == "join":
+            room_name = msg.get("data", {}).get("room")
+            if room_name:
+                self.destroy()
+                room = RoomWindow(self.master, self.client, room_name)
+                room.pack(fill="both", expand=True)

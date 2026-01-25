@@ -3,13 +3,14 @@ import json
 import threading
 import pyaudio
 
+UDP_HOST = "127.0.0.1"   # IP UDP server
+UDP_PORT = 9001
 
 class VoiceClient:
-    def __init__(self, username, room, host="127.0.0.1", port=9001):
+    def __init__(self, username="user", room="default"):
         self.username = username
         self.room = room
-        self.server = (host, port)
-        self.running = False
+        self.running = True
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(("0.0.0.0", 0))
@@ -33,16 +34,12 @@ class VoiceClient:
         )
 
     def start(self):
-        self.running = True
+        print("[VOICE] Voice started")
         threading.Thread(target=self.send_voice, daemon=True).start()
         threading.Thread(target=self.receive_voice, daemon=True).start()
 
-    def stop(self):
-        self.running = False
-        self.stream_in.close()
-        self.stream_out.close()
-        self.audio.terminate()
-        self.sock.close()
+        while self.running:
+            pass
 
     def send_voice(self):
         while self.running:
@@ -52,14 +49,21 @@ class VoiceClient:
                 "room": self.room,
                 "audio": data.hex()
             }
-            self.sock.sendto(json.dumps(packet).encode(), self.server)
+            self.sock.sendto(
+                json.dumps(packet).encode(),
+                (UDP_HOST, UDP_PORT)
+            )
 
     def receive_voice(self):
         while self.running:
-            try:
-                data, _ = self.sock.recvfrom(65535)
-                msg = json.loads(data.decode())
-                audio_bytes = bytes.fromhex(msg["audio"])
-                self.stream_out.write(audio_bytes)
-            except:
-                pass
+            data, _ = self.sock.recvfrom(65535)
+            msg = json.loads(data.decode())
+            audio_bytes = bytes.fromhex(msg["audio"])
+            self.stream_out.write(audio_bytes)
+
+    def stop(self):
+        self.running = False
+        self.stream_in.close()
+        self.stream_out.close()
+        self.audio.terminate()
+        self.sock.close()

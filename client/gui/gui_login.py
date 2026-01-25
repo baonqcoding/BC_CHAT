@@ -23,15 +23,20 @@ class LoginWindow(tk.Frame):
     def login(self):
         self.client.send({
             "type": "login",
-            "username": self.username.get(),
-            "password": self.password.get()
+            "data": {
+                "username": self.username.get(),
+                "password": self.password.get()
+            }
         })
 
     def handle_server(self, msg):
-        if msg["type"] == "login":
-            if msg["status"] == "ok":
+        if msg.get("type") == "login":
+            status = msg.get("data", {}).get("status")
+
+            if status == "ok":
                 self.destroy()
                 lobby = LobbyWindow(self.master, self.client)
                 lobby.pack(fill="both", expand=True)
             else:
                 self.status.config(text="Login failed")
+

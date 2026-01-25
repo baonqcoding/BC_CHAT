@@ -1,11 +1,13 @@
 import socket
 import threading
 import json
-from utils import encode_message, decode_message
+from utils import encode_message, decode_messages
 from client_manager import ClientManager
 from room_manager import RoomManager
+
 HOST = "0.0.0.0"
-PORT = 9000   
+PORT = 9000
+
 client_manager = ClientManager()
 room_manager = RoomManager()
 
@@ -13,46 +15,68 @@ with open("users_db.json", "r") as f:
     USERS = json.load(f)
 
 
+
+
 def handle_client(conn, addr):
     print(f"[+] Client connected: {addr}")
+    buffer = ""
 
     try:
         while True:
-            data = conn.recv(1024)
-            if not data:
+            raw = conn.recv(1024)
+            if not raw:
                 break
 
-            msg = decode_message(data)
-            msg_type = msg["type"]
-            data = msg.get("data", {})
+            buffer += raw.decode("utf-8")
+            messages, buffer = decode_messages(buffer)
 
-            if msg_type == "login":
-                user = data["username"]
-                password = data["password"]
+            for line in messages:
+                msg = json.loads(line)
+                print("[DEBUG][SERVER] msg =", msg)
 
-                if USERS.get(user) == password:
-                    client_manager.add(conn, user)
-                    conn.send(encode_message({
-                        "type": "login",
-                        "data": {"status": "ok"}
+                msg_type = msg.get("type")
+                data = msg.get("data", {})
+
+                
+                if msg_type == "login":
+                    user = data.get("username")
+                    password = data.get("password")
+
+                    if USERS.get(user) == password:
+                        client_manager.add(conn, user)
+                        conn.sendall(encode_message({
+                            "type": "login",
+                            "data": {"status": "ok"}
+                        }))
+                    else:
+                        conn.sendall(encode_message({
+                            "type": "login",
+                            "data": {"status": "fail"}
+                        }))
+
+
+                elif msg_type == "join":
+                    room = data.get("room")
+                    room_manager.join(room, conn)
+
+                    conn.sendall(encode_message({
+                        "type": "join",
+                        "data": {"room": room}
                     }))
 
-            elif msg_type == "join":
-                room = data["room"]
-                room_manager.join(room, conn)
 
-            elif msg_type == "chat":
-                room = data["room"]
-                text = data["message"]
-                username = client_manager.get_username(conn)
+                elif msg_type == "chat":
+                    room = data.get("room")
+                    message = data.get("message")
+                    user = client_manager.get_username(conn)
 
-                room_manager.broadcast(room, {
-                    "type": "chat",
-                    "data": {
-                        "user": username,
-                        "message": text
-                    }
-                })
+                    room_manager.broadcast(room, {
+                        "type": "chat",
+                        "data": {
+                            "user": user,
+                            "message": message
+                        }
+                    })
 
     finally:
         client_manager.remove(conn)

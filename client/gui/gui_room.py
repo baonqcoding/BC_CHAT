@@ -1,6 +1,6 @@
 import tkinter as tk
 import threading
-from gui.gui_voice_call import VoiceClient   # nếu bạn có file này
+from gui.gui_voice_call import VoiceClient   
 
 class RoomWindow(tk.Frame):
     def __init__(self, master, client, room):
@@ -9,7 +9,7 @@ class RoomWindow(tk.Frame):
         self.room = room
         self.client.on_message = self.handle_server
 
-        self.voice = None  # giữ voice client
+        self.voice = None 
 
         self.chat_box = tk.Text(self, state="disabled", height=15)
         self.chat_box.pack(fill="both", expand=True)
@@ -34,7 +34,7 @@ class RoomWindow(tk.Frame):
 
     def start_voice(self):
         if self.voice:
-            return  # tránh bấm nhiều lần
+            return  
 
         self.voice = VoiceClient(room=self.room)
         threading.Thread(
@@ -58,7 +58,7 @@ class RoomWindow(tk.Frame):
             return
 
         self.voice = VoiceClient(
-            username="user",   # hoặc lấy từ client_manager
+            username="user",   
             room=self.room
         )
 

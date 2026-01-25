@@ -3,7 +3,7 @@ import json
 import threading
 import pyaudio
 
-UDP_HOST = "127.0.0.1"   # IP UDP server
+UDP_HOST = "127.0.0.1"   
 UDP_PORT = 9001
 
 class VoiceClient:

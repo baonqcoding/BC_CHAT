@@ -2,12 +2,12 @@ import socket
 import threading
 import json
 from utils import encode_message, decode_message
-
+from client_manager import ClientManager
+from room_manager import RoomManager
 HOST = "0.0.0.0"
-PORT = 9000   # 🔥 PHẢI TRÙNG VỚI gateway
-
-clients = {}   # conn -> username
-rooms = {}     # room -> list[conn]
+PORT = 9000   
+client_manager = ClientManager()
+room_manager = RoomManager()
 
 with open("users_db.json", "r") as f:
     USERS = json.load(f)
@@ -15,7 +15,6 @@ with open("users_db.json", "r") as f:
 
 def handle_client(conn, addr):
     print(f"[+] Client connected: {addr}")
-    username = None
 
     try:
         while True:
@@ -24,65 +23,42 @@ def handle_client(conn, addr):
                 break
 
             msg = decode_message(data)
-            msg_type = msg.get("type")
+            msg_type = msg["type"]
+            data = msg.get("data", {})
 
-            # ---------- LOGIN ----------
             if msg_type == "login":
-                user = msg["username"]
-                password = msg["password"]
+                user = data["username"]
+                password = data["password"]
 
                 if USERS.get(user) == password:
-                    username = user
-                    clients[conn] = user
+                    client_manager.add(conn, user)
                     conn.send(encode_message({
                         "type": "login",
-                        "status": "ok"
-                    }))
-                else:
-                    conn.send(encode_message({
-                        "type": "login",
-                        "status": "fail"
+                        "data": {"status": "ok"}
                     }))
 
-            # ---------- JOIN ROOM ----------
             elif msg_type == "join":
-                room = msg["room"]
+                room = data["room"]
+                room_manager.join(room, conn)
 
-                if room not in rooms:
-                    rooms[room] = []
-
-                if conn not in rooms[room]:
-                    rooms[room].append(conn)
-
-                conn.send(encode_message({
-                    "type": "join",
-                    "room": room
-                }))
-
-            # ---------- CHAT ----------
             elif msg_type == "chat":
-                room = msg["room"]
-                text = msg["message"]
+                room = data["room"]
+                text = data["message"]
+                username = client_manager.get_username(conn)
 
-                for c in rooms.get(room, []):
-                    c.send(encode_message({
-                        "type": "chat",
+                room_manager.broadcast(room, {
+                    "type": "chat",
+                    "data": {
                         "user": username,
                         "message": text
-                    }))
-
-    except Exception as e:
-        print("[ERROR]", e)
+                    }
+                })
 
     finally:
-        print(f"[-] Client disconnected: {username}")
-
-        for room in rooms.values():
-            if conn in room:
-                room.remove(conn)
-
-        clients.pop(conn, None)
+        client_manager.remove(conn)
+        room_manager.remove_client(conn)
         conn.close()
+
 
 
 def start_tcp_server():

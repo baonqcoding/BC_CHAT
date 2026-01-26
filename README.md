@@ -1,6 +1,6 @@
 # BC_CHAT – Chat & Voice Call Application (Python)
 
-BC_CHAT là một ứng dụng chat và voice call đơn giản, ứng dụng được lên ý tưởng dựa theo app Discord, được xây dựng bằng Python theo mô hình Client – Server.  
+BC_CHAT là một ứng dụng chat và voice call đơn giản, ứng dụng được lên ý tưởng dựa theo app Simple Chat, được xây dựng bằng Python theo mô hình Client – Server.  
 Dự án sử dụng **TCP cho chat text** và **UDP cho voice call realtime**, kết hợp giao diện **Tkinter GUI**.
 +Tính năng chính
 

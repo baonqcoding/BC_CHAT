@@ -1,6 +1,6 @@
 import tkinter as tk
 import threading
-from gui.gui_voice_call import VoiceClient   
+from voice_call.voice_call import VoiceClient
 
 class RoomWindow(tk.Frame):
     def __init__(self, master, client, room):

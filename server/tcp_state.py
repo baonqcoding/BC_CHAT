@@ -14,7 +14,24 @@ room_manager = RoomManager()
 with open("users_db.json", "r") as f:
     USERS = json.load(f)
 
+def broadcast_user_list(room_name):
 
+    conns = room_manager.get_connections(room_name)
+    
+    users_in_room = []
+    for conn in conns:
+        username = client_manager.get_username(conn)
+        if username:
+            users_in_room.append(username)
+    
+    msg = {
+        "type": "update_users",
+        "data": {
+            "users": users_in_room
+        }
+    }
+    print(f"[DEBUG] Updating room {room_name} with users: {users_in_room}")
+    room_manager.broadcast(room_name, msg)
 
 
 def handle_client(conn, addr):
@@ -32,11 +49,9 @@ def handle_client(conn, addr):
 
             for line in messages:
                 msg = json.loads(line)
-                print("[DEBUG][SERVER] msg =", msg)
 
                 msg_type = msg.get("type")
                 data = msg.get("data", {})
-
                 
                 if msg_type == "login":
                     user = data.get("username")
@@ -54,7 +69,6 @@ def handle_client(conn, addr):
                             "data": {"status": "fail"}
                         }))
 
-
                 elif msg_type == "join":
                     room = data.get("room")
                     room_manager.join(room, conn)
@@ -63,7 +77,8 @@ def handle_client(conn, addr):
                         "type": "join",
                         "data": {"room": room}
                     }))
-
+                    
+                    broadcast_user_list(room)
 
                 elif msg_type == "chat":
                     room = data.get("room")
@@ -79,10 +94,15 @@ def handle_client(conn, addr):
                     })
 
     finally:
-        client_manager.remove(conn)
-        room_manager.remove_client(conn)
-        conn.close()
 
+        client_manager.remove(conn)
+        
+        affected_rooms = room_manager.remove_client(conn)
+        
+        conn.close()
+        
+        for room in affected_rooms:
+            broadcast_user_list(room)
 
 
 def start_tcp_server():

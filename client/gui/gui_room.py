@@ -55,7 +55,7 @@ class RoomWindow(ctk.CTkFrame):
 
         self.btn_send = ctk.CTkButton(
             self.bottom_frame, 
-            text="Gửi" if not self.icon_send else "", 
+            text="➤" if not self.icon_send else "", 
             image=self.icon_send,
             width=50, 
             command=self.send_chat
@@ -64,7 +64,7 @@ class RoomWindow(ctk.CTkFrame):
 
         self.btn_voice = ctk.CTkButton(
             self.bottom_frame, 
-            text="Gọi" if not self.icon_mic else "", 
+            text="🎤" if not self.icon_mic else "", 
             image=self.icon_mic,
             width=50, 
             fg_color="#2ecc71",

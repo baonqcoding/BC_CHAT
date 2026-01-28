@@ -1,4 +1,5 @@
 from utils import encode_message
+
 class RoomManager:
     def __init__(self):
         self.rooms = {}  
@@ -15,12 +16,19 @@ class RoomManager:
                 del self.rooms[room]
 
     def broadcast(self, room, data):
-        for conn in self.rooms.get(room, []):
+        for conn in list(self.rooms.get(room, [])):
             try:
                 conn.send(encode_message(data))
             except:
                 pass
+    
+    def get_connections(self, room):
+        return list(self.rooms.get(room, []))
 
     def remove_client(self, conn):
+        affected_rooms = []
         for room in list(self.rooms.keys()):
-            self.leave(room, conn)
+            if conn in self.rooms[room]:
+                self.leave(room, conn)
+                affected_rooms.append(room)
+        return affected_rooms

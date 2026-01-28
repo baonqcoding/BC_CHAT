@@ -3,7 +3,11 @@ import websockets
 import socket
 import threading
 
+<<<<<<< HEAD
 TCP_HOST = "192.168.1.186"
+=======
+TCP_HOST = "192.168.1.124"
+>>>>>>> tester
 TCP_PORT = 9000
 WS_PORT = 8765
 

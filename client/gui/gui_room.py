@@ -1,70 +1,149 @@
+import customtkinter as ctk
 import tkinter as tk
 import threading
+<<<<<<< HEAD
 from voice_call.voice_call import VoiceClient
+=======
+from PIL import Image
+from gui.gui_voice_call import VoiceClient
+>>>>>>> tester
 
-class RoomWindow(tk.Frame):
+class RoomWindow(ctk.CTkFrame):
     def __init__(self, master, client, room):
         super().__init__(master)
         self.client = client
         self.room = room
         self.client.on_message = self.handle_server
+        
+        self.voice = None
 
-        self.voice = None 
+        
+        self.icon_send = None
+        self.icon_mic = None
+        self.icon_hangup = None
+        self.img_user = None
 
-        self.chat_box = tk.Text(self, state="disabled", height=15)
-        self.chat_box.pack(fill="both", expand=True)
+        try:
+            self.icon_send = ctk.CTkImage(light_image=Image.open("send.png"), dark_image=Image.open("send.png"), size=(20, 20))
+            self.icon_mic = ctk.CTkImage(light_image=Image.open("mic.png"), dark_image=Image.open("mic.png"), size=(20, 20))
+            self.icon_hangup = ctk.CTkImage(light_image=Image.open("hangup.png"), dark_image=Image.open("hangup.png"), size=(20, 20))
+            self.img_user = ctk.CTkImage(light_image=Image.open("user_icon.png"), dark_image=Image.open("user_icon.png"), size=(20, 20))
+        except Exception as e:
+            print(f"Lưu ý: Không tìm thấy file icon ({e}). Sẽ dùng text thay thế.")
 
-        self.entry = tk.Entry(self)
-        self.entry.pack(fill="x")
+        
+        self.header = ctk.CTkFrame(self, height=50, corner_radius=0, fg_color="#2b2b2b")
+        self.header.pack(fill="x", side="top")
+        ctk.CTkLabel(self.header, text=f"PHÒNG: {room}", font=("Arial", 16, "bold")).pack(pady=10)
 
-        tk.Button(self, text="Send", command=self.send_chat).pack()
-        tk.Button(self, text="Voice Call", command=self.start_voice).pack()
+        self.body_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.body_frame.pack(fill="both", expand=True, padx=10, pady=(10, 0))
+
+        self.chat_box = ctk.CTkTextbox(self.body_frame, state="disabled", font=("Consolas", 14))
+        self.chat_box.pack(side="left", fill="both", expand=True)
+
+        self.user_list_frame = ctk.CTkFrame(self.body_frame, width=160, corner_radius=10)
+        self.user_list_frame.pack(side="right", fill="y", padx=(10, 0))
+        
+        ctk.CTkLabel(self.user_list_frame, text="Thành viên", font=("Arial", 13, "bold"), text_color="gray").pack(pady=(10, 5))
+        
+        self.user_scroll = ctk.CTkScrollableFrame(self.user_list_frame, fg_color="transparent")
+        self.user_scroll.pack(fill="both", expand=True)
+
+        self.bottom_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.bottom_frame.pack(fill="x", side="bottom", padx=10, pady=10)
+
+        self.entry = ctk.CTkEntry(self.bottom_frame, placeholder_text="Nhập tin nhắn...")
+        self.entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        self.entry.bind("<Return>", lambda event: self.send_chat())
+
+        self.btn_send = ctk.CTkButton(
+            self.bottom_frame, 
+            text="➤" if not self.icon_send else "", 
+            image=self.icon_send,
+            width=50, 
+            command=self.send_chat
+        )
+        self.btn_send.pack(side="left", padx=(0, 5))
+
+        self.btn_voice = ctk.CTkButton(
+            self.bottom_frame, 
+            text="🎤" if not self.icon_mic else "", 
+            image=self.icon_mic,
+            width=50, 
+            fg_color="#2ecc71",
+            hover_color="#27ae60",
+            command=self.toggle_voice
+        )
+        self.btn_voice.pack(side="left")
+
 
     def send_chat(self):
         msg = self.entry.get()
+        if not msg: return
         self.entry.delete(0, tk.END)
 
         self.client.send({
             "type": "chat",
-            "data": {
-                "room": self.room,
-                "message": msg
-            }
+            "data": {"room": self.room, "message": msg}
         })
 
-    def start_voice(self):
-        if self.voice:
-            return  
-
-        self.voice = VoiceClient(room=self.room)
-        threading.Thread(
-            target=self.voice.start,
-            daemon=True
-        ).start()
-
-        print("[VOICE] Started")
-
     def handle_server(self, msg):
-        if msg.get("type") == "chat":
+        msg_type = msg.get("type")
+        
+        if msg_type == "chat":
             user = msg["data"]["user"]
             message = msg["data"]["message"]
+            self.chat_box.configure(state="normal")
+            self.chat_box.insert(tk.END, f"[{user}]: {message}\n")
+            self.chat_box.configure(state="disabled")
+            self.chat_box.see(tk.END)
+            
+        elif msg_type == "update_users":
+            users = msg.get("data", {}).get("users", [])
+            self.update_user_list(users)
 
-            self.chat_box.config(state="normal")
-            self.chat_box.insert(tk.END, f"{user}: {message}\n")
-            self.chat_box.config(state="disabled")
-    def start_voice(self):
-        if hasattr(self, "voice") and self.voice:
-            print("[VOICE] Already running")
-            return
+    def update_user_list(self, users):
+        
+        for widget in self.user_scroll.winfo_children():
+            widget.destroy()
 
-        self.voice = VoiceClient(
-            username="user",   
-            room=self.room
-        )
+        for user in users:
+            item = ctk.CTkFrame(self.user_scroll, fg_color="transparent")
+            item.pack(fill="x", pady=2)
+            
+            lbl = ctk.CTkLabel(
+                item, 
+                text=f"👤  {user}",
+                image=self.img_user,
+                compound="left",
+                anchor="w",
+                font=("Arial", 13)
+            )
+            lbl.pack(fill="x", padx=5)
 
-        threading.Thread(
-            target=self.voice.start,
-            daemon=True
-        ).start()
+    def toggle_voice(self):
+    
+        if self.voice is None:
+            self.voice = VoiceClient(username="User", room=self.room)
+            self.voice.start()
+            
+            self.btn_voice.configure(
+                text="📞" if not self.icon_hangup else "",
+                image=self.icon_hangup if self.icon_hangup else self.icon_mic,
+                fg_color="#c0392b",
+                hover_color="#922b21"
+            )
+            print("[GUI] Voice Call Started")
 
-        print("[VOICE] Started")
+        else:
+            self.voice.stop()
+            self.voice = None
+            
+            self.btn_voice.configure(
+                text="🎤" if not self.icon_mic else "",
+                image=self.icon_mic,
+                fg_color="#2ecc71",
+                hover_color="#27ae60"
+            )
+            print("[GUI] Voice Call Stopped")

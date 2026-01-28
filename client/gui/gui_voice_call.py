@@ -4,7 +4,7 @@ import pyaudio
 
 class VoiceClient:
     def __init__(self, username, room, port=9001):
-        self.server_ip = "127.0.0.1"
+        self.server_ip = "192.168.1.124"
         self.port = port
         self.username = username
         self.room = room

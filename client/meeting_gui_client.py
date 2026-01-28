@@ -10,7 +10,7 @@ def main():
     root.title("Chat Client")
     root.geometry("400x600")
 
-    client = GatewayClient(host="127.0.0.1", port=9000)
+    client = GatewayClient(host="192.168.1.124", port=9000)
 
     app = LoginWindow(root, client)
     app.pack(fill="both", expand=True)

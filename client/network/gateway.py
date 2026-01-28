@@ -5,7 +5,7 @@ import json
 from utils import encode_message
 
 class GatewayClient:
-    def __init__(self, host="127.0.0.1", port=9000):
+    def __init__(self, host="192.168.1.124", port=9000):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((host, port))
         self.running = True
